@@ -1,17 +1,19 @@
 "use client";
-
 import React, { useState, useEffect } from 'react';
 import Note from '../components/Note';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { useUser } from '@clerk/nextjs';
 
 const Home: React.FC = () => {
+  const { user } = useUser();
   interface Note {
     id: string;
     title: string;
     content: string;
     language: string;
-    createdAt?: Date;
+    userId: string;
+    createdAt: Date;
     updatedAt?: Date;
   }
   
@@ -20,37 +22,41 @@ const Home: React.FC = () => {
   const [content, setContent] = useState('');
   const [language, setLanguage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [filteredNotes, setFilteredNotes] = useState<Note[]>([]);
 
   useEffect(() => {
-    const fetchNotes = async () => {
-      const querySnapshot = await getDocs(collection(db, 'notes'));
-      const notesData = querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
+    if (user) {
+      const unsubscribe = onSnapshot(collection(db, 'notes'), (snapshot) => {
+        const notesData = snapshot.docs.map(doc => ({
           id: doc.id,
-          title: data.title,
-          content: data.content,
-          language: data.language,
-          createdAt: data.createdAt?.toDate(),
-          updatedAt: data.updatedAt?.toDate(),
-        };
+          title: doc.data().title,
+          content: doc.data().content,
+          language: doc.data().language,
+          userId: doc.data().userId,
+          createdAt: doc.data().createdAt.toDate(),
+          updatedAt: doc.data().updatedAt ? doc.data().updatedAt.toDate() : undefined,
+        }));
+        setNotes(notesData);
+        setFilteredNotes(notesData);
       });
-      setNotes(notesData);
-    };
 
-    fetchNotes();
-  }, []);
+      return () => unsubscribe();
+    }
+  }, [user]);
 
   const addNote = async () => {
-    await addDoc(collection(db, 'notes'), {
-      title,
-      content,
-      language,
-      createdAt: new Date(),
-    });
-    setTitle('');
-    setContent('');
-    setLanguage('');
+    if (user) {
+      await addDoc(collection(db, 'notes'), {
+        title,
+        content,
+        language,
+        userId: user.id,
+        createdAt: new Date(),
+      });
+      setTitle('');
+      setContent('');
+      setLanguage('');
+    }
   };
 
   const updateNote = async (id: string, newTitle: string, newContent: string, newLanguage: string) => {
@@ -68,51 +74,68 @@ const Home: React.FC = () => {
     await deleteDoc(noteRef);
   };
 
-  const searchNotes = (query: string) => {
-    return notes.filter(note => note.title.includes(query) || note.content.includes(query));
+  const searchNotes = () => {
+    const filtered = notes.filter(note => 
+      note.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      note.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      note.language.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    setFilteredNotes(filtered);
   };
 
-  const filteredNotes = searchQuery ? searchNotes(searchQuery) : notes;
-
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-4">Language Learning Notes</h1>
-      <div className="mb-4">
-        <input
-          type="text"
-          placeholder="Search notes..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="border p-2 rounded"
-        />
-      </div>
-      <div className="mb-4">
-        <input
-          type="text"
-          placeholder="Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="border p-2 rounded mb-2"
-        />
-        <textarea
-          placeholder="Content"
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          className="border p-2 rounded mb-2"
-        />
-        <input
-          type="text"
-          placeholder="Language"
-          value={language}
-          onChange={(e) => setLanguage(e.target.value)}
-          className="border p-2 rounded mb-2"
-        />
-        <button onClick={addNote} className="bg-blue-500 text-white p-2 rounded">Add Note</button>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filteredNotes.map(note => (
-          <Note key={note.id} note={note} />
-        ))}
+    <div className="min-h-screen bg-gray-100 p-6">
+      <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-lg">
+        <h1 className="Intro text-4xl font-bold text-center mb-8 text-blue-600">Welcome to LearnNote</h1>
+        <h2 className='description'>Your very own notesmaker for learning new languages.</h2>
+        <div className="mb-6 flex items-center space-x-4">
+          <input
+            type="text"
+            placeholder="Search notes..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            onClick={searchNotes}
+            className="bg-purple-500 text-white p-3 rounded-lg hover:bg-blue-600 transition duration-300"
+          >
+            Search
+          </button>
+        </div>
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <input
+            type="text"
+            placeholder="Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <input
+            type="text"
+            placeholder="Language"
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
+            className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <textarea
+            placeholder="Content"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            className="col-span-2 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            onClick={addNote}
+            className="abutton col-span-2 bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 transition duration-300"
+          >
+            Add Note
+          </button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {filteredNotes.map(note => (
+            <Note key={note.id} note={note} onDelete={deleteNote} />
+          ))}
+        </div>
       </div>
     </div>
   );

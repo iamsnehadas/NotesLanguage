@@ -25,3 +25,43 @@ body {
     text-wrap: balance;
   }
 }
+
+.entire{
+  background-color: rgb(87, 86, 86);
+}
+
+
+.entry{
+  background-color: rgb(20, 19, 19);
+  color:#030303;  
+  height:50%;
+}
+
+.indiv{
+  color:#0a0a0a;
+  background-color: rosybrown;
+}
+
+.description{
+  color: #030303;
+  margin-top: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: large;
+  font-weight: 200;
+  text-align: center;
+  margin-bottom: 5%;
+}
+.Intro{
+  margin-bottom: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color:rgb(134, 200, 20);
+}
+
+.abutton{
+  background-color: #509724;
+  border: 2px solid black;
+}
+
+.del{
+  font-size:x-small;
+}
