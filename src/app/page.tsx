@@ -59,6 +59,7 @@ const Home: React.FC = () => {
     }
   };
 
+/*
   const updateNote = async (id: string, newTitle: string, newContent: string, newLanguage: string) => {
     const noteRef = doc(db, 'notes', id);
     await updateDoc(noteRef, {
@@ -68,6 +69,7 @@ const Home: React.FC = () => {
       updatedAt: new Date(),
     });
   };
+*/
 
   const deleteNote = async (id: string) => {
     const noteRef = doc(db, 'notes', id);
