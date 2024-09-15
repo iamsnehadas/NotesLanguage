@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import Note from '../components/Note';
-import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, /*updateDoc,*/ deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useUser } from '@clerk/nextjs';
 
